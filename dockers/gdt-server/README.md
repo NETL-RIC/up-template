@@ -33,7 +33,7 @@ From the command prompt, run the following:
 
 2. Get the Dockerfile
 
-   `git clone https://github.com/GreenDelta/gdt-server.git`
+   `cmd /c get-docker.bat`
 
 3. Build the image (copy build.bat to gdt-server directory)
 
