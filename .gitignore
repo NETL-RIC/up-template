@@ -11,5 +11,8 @@ __pycache__
 docs/build
 up_template.egg-info/*
 
+# Ignore third-party Dockerfiles
+dockers/*/Dockerfile
+
 # Keep the HTML resources with the repo
 !resources/*.html
