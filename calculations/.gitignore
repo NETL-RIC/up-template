@@ -1,0 +1,6 @@
+# Exclude everything
+*.*
+
+# Except for these items:
+!.gitignore
+!calculation_template.xlsx

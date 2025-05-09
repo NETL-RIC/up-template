@@ -1,0 +1,15 @@
+# Ignore the common stuff
+.spyproject
+*.pyc
+.vscode
+.DS_Store
+.ipynb_checkpoints
+*.html
+__pycache__
+
+# Ignore HTML Sphinx documentation build and local egg installation.
+docs/build
+up_template.egg-info/*
+
+# Keep the HTML resources with the repo
+!resources/*.html
