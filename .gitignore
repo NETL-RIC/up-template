@@ -13,6 +13,7 @@ up_template.egg-info/*
 
 # Ignore third-party Dockerfiles
 dockers/*/Dockerfile
+.env
 
 # Keep the HTML resources with the repo
 !resources/*.html
