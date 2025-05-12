@@ -1,4 +1,5 @@
 #!/bin/bash
+# get-docker.sh (GDT server version)
 
 # --- Configuration ---
 repo_url="https://github.com/GreenDelta/gdt-server"

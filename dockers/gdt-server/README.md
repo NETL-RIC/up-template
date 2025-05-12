@@ -13,11 +13,11 @@ From a BASH terminal, run the following:
 
    `bash get-docker.sh`
 
-3. Build the image (copy build.bat to gdt-server directory)
+3. Build the image
 
    `bash build.sh`
 
-4. Run the container (copy the run.bat to gdt-server directory)
+4. Run the container
 
    `bash run.sh`
 
@@ -35,11 +35,11 @@ From the command prompt, run the following:
 
    `cmd /c get-docker.bat`
 
-3. Build the image (copy build.bat to gdt-server directory)
+3. Build the image
 
    `cmd /c build.bat`
 
-4. Run the container (copy the run.bat to gdt-server directory)
+4. Run the container
 
    `cmd /c run.bat`
 

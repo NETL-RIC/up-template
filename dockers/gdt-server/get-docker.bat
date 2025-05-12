@@ -1,4 +1,6 @@
 @echo off
+REM get-docker (GDT server version)
+
 REM --- Configuration ---
 set repo_url=https://github.com/GreenDelta/gdt-server
 set repo_dir=gdt-server
