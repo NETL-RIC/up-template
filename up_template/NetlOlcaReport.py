@@ -30,9 +30,9 @@ import logging
 import os
 import re
 import subprocess
-import pandas as pd
 
 import olca_schema as o
+import pandas as pd
 import sympy
 
 
