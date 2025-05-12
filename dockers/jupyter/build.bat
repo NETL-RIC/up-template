@@ -1,1 +1,1 @@
-docker build --rm --tag my-custom-jupyter .
+docker build --no-cache --rm --tag my-custom-jupyter .

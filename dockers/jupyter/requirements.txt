@@ -1,0 +1,4 @@
+git+https://github.com/NETL-RIC/netlolca#egg=netlolca
+pandas
+sympy
+tabulate
