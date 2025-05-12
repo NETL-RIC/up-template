@@ -1,4 +1,5 @@
 @echo off
+REM get-docker (Jupyter version)
 
 REM --- Configuration ---
 set output_file=Dockerfile

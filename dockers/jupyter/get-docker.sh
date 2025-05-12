@@ -1,4 +1,5 @@
 #!/bin/bash
+# get-docker.sh (Jupyter version)
 
 # --- Configuration ---
 repo_file="Dockerfile"
