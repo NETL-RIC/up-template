@@ -10,13 +10,12 @@ if exist "%output_file%" (
 )
 
 REM The lines of text
-set line1=FROM quay.io/jupyter/minimal-notebook
-set line3=RUN pip install --no-cache-dir 'olca-ipc' && \%
-set line4=  fix-permissions "${CONDA_DIR}" && \%
-set line5=  fix-permissions "/home/${NB_USER}"
-set line7=USER root
-set line9=RUN apt-get update && apt-get install -y lmodern
-
+set "line1=FROM quay.io/jupyter/minimal-notebook"
+set "line3=RUN pip install --no-cache-dir 'olca-ipc' ^&^& \%"
+set "line4=  fix-permissions "${CONDA_DIR}" ^&^& \%"
+set "line5=  fix-permissions "/home/${NB_USER}""
+set "line7=USER root"
+set "line9=RUN apt-get update ^&^& apt-get install -y lmodern"
 
 REM Write the lines to the file
 echo %line1% >> "%output_file%"
