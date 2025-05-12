@@ -1,4 +1,6 @@
 # NETL's Unit Process Template and Report Generator
+[![DOI - 10.18141/2564974](https://img.shields.io/badge/DOI-10.18141%2F2564974-blue)](https://doi.org/10.18141/2564974)
+
 A Jupyter Notebook for developing and reporting NETL LCA unit processes.
 
 The foundation of all tools in this package is the [NetlOlca](https://doi.org/10.18141/2503973) class, which is designed to provide a single set of methods for querying and editing openLCA databases either directly with openLCA app or indirectly via exported JSON-LD zip files.
