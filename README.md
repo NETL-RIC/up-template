@@ -46,12 +46,16 @@ This should start the Jupyter notebook server and automatically launch the landi
     │   │   ├── README.md
     │   │   ├── build.bat
     │   │   ├── build.sh
+    │   │   ├── get-docker.bat
+    │   │   ├── get-docker.sh
     │   │   ├── run.bat
     │   │   └── run.sh
     │   └── jupyter/
     │       ├── README.md
     │       ├── build.bat
     │       ├── build.sh
+    │       ├── get-docker.bat
+    │       ├── get-docker.sh
     │       ├── run.bat
     │       └── run.sh
     │
