@@ -7,21 +7,56 @@ The foundation of all tools in this package is the [NetlOlca](https://doi.org/10
 
 
 ## Jupyter Notebook Unit Process Template
-One of the main use cases for this tool is a new template based on Jupyter Notebook for reporting LCA unit processes.
+The unit process template is a markdown file, organized by headers, to capture the essential information that goes into the creation of a life cycle unit process.
+Capturing key metadata is critical for reproducibility of unit processes and for transparency to enable its application.
 
-The new template is provided at the top-level of this repository (up_template.ipynb).
+Two Python classes were developed to support the generation of this report:
 
-![](img/package_uml.png)
+1. NetlOlcaReport (up_template/NetlOlcaReport.py)
+2. Interface (up_template/Interface.py)
 
-Two additional classes were developed to support this interactive report generator:
-
-1. NetlOlcaReport (netlolca/NetlOlcaReport.py)
-2. Interface (netlolca/Interface.py)
-
-The NetlOlcaReport class provides intermediate methods for converting openLCA entity data into usable data frames and generating a summary of the results into a markdown format that can be converted into other reportable formats (e.g., HTML, Microsoft Word, and PDF).
+The NetlOlcaReport class provides the methods for converting openLCA entity data into usable data frames and summaries and writing them into markdown format that can be converted into other reportable formats (e.g., HTML, Microsoft Word, and PDF).
 The file format conversion depends on a user's local installation of [pandoc](https://pandoc.org/), a free and open-source tool for converting between different markup formats.
 
-The recommended app for running the UP Template is [JupyterLab](https://jupyter.org/), the latest web-based interactive development environment for computational notebooks.
+To create a blank template in markdown:
+
+```python
+>>> from netlolca import NetlOlca
+>>> from up_template import NetlOlcaReport
+>>> r = NetlOlcaReport(NetlOlca())
+>>> r.save_markdown(blank=True)
+```
+
+You may edit this markdown file before rendering to HTML.
+If you rename the file, be sure to update the reference name in the Python class.
+
+```python
+>>> r.reference_name = "new_report"  # don't include the file extension
+```
+
+To generate the HTML version of the report, run the conversion method (PDF and Microsoft Word formats are also available).
+
+```python
+>>> r.convert_to_html()  # requires pandoc install
+>>> r.convert_to_pdf()   # requires additional LaTeX install
+>>> r.convert_to_word()
+```
+
+Automated methods are available in the NetlOlcaReport class, which attempt to read and extract metadata from an openLCA database and map it to the report template.
+Similar to above, the steps to connect the NetlOlcaReport class to an openLCA database are as follows:
+
+```python
+>>> n = NetlOlca()
+>>> n.connect()     # establish connection via IPC service (default port 8080)
+>>> n.read()        # read database UUIDs
+>>> r = NetlOlcaReport(n)
+>>> ps_uuid = r.product_systems[0]  # Get UUID of lone Product System
+>>> r.fetch_data(ps_uuid)           # Scrape database for metadata
+>>> r.save_to_html()  # create MD and HTML report files
+```
+
+The Interface.py is an experimental class that guides users through metadata review and gap-filling.
+This is best accommodated through [JupyterLab](https://jupyter.org/), the latest web-based interactive development environment for computational notebooks.
 JupyterLab may be installed using Python's `pip` or conda's `install` commands.
 To start Jupyter Lab, run the following command (after installing) in the parent folder where your up_template.ipynb is located:
 
@@ -37,11 +72,12 @@ This should start the Jupyter notebook server and automatically launch the landi
     up-template/
     ├── calculations/   <- store for auxiliary Excel workbooks to document
     │   │                  calculations in the UP template
-    │   └── calculation_template.xlsx   <-- template for calculations
+    │   └── calculation_template.xlsx   <- template for calculations
     │
-    ├── data/           <- empty folder for data files (e.g., JSON-LD)
+    ├── (data/)         <- folder for data files (e.g., JSON-LD)
     │
     ├── dockers/ (for getting things to run in Docker)
+    │   ├── USERGUIDE.md   <- Docker instructions
     │   ├── gdt_server/
     │   │   ├── README.md
     │   │   ├── build.bat
@@ -56,6 +92,7 @@ This should start the Jupyter notebook server and automatically launch the landi
     │       ├── build.sh
     │       ├── get-docker.bat
     │       ├── get-docker.sh
+    │       ├── requirements.txt
     │       ├── run.bat
     │       └── run.sh
     │
@@ -65,13 +102,7 @@ This should start the Jupyter notebook server and automatically launch the landi
     │   └── Makefile         <- source files to documentation (e.g., html)
     │
     ├── img/            <- image resources for notebooks and README
-    │   ├── banner.png (293 KB)
-    │   ├── boundary_diagram.png (205 KB)
-    │   ├── logo_doe-netl_white_1000x176.png (30 KB)
-    │   ├── netl_logo_100x52.png (14 KB)
-    │   ├── netl_logo_1153x599.png (26 KB)
-    │   ├── netl_logo2.svg (2 KB)
-    │   ├── netl_logo2_320x251.png (13 KB)
+    │   ├── ipynb-token.png (92 KB)
     │   └── package_uml.png (281 KB)
     │
     ├── (output/)       <- Created when running UP Template to store the
@@ -79,11 +110,13 @@ This should start the Jupyter notebook server and automatically launch the landi
     │
     ├── resources/
     │   ├── after_body.html
+    │   ├── banner.png                        <- header in up_template.ipynb
     │   ├── before_body.html
-    │   ├── banner.png
-    │   ├── netl_logo_100x52.png
-    │   ├── logo_doe-netl_white_1000x176.png
-    │   ├── (other logo files?)
+    │   ├── boundary_diagram.png
+    │   ├── logo_doe-netl_white_1000x176.png  <- footer in template.docx
+    │   ├── netl_logo_100x52.png              <- header in template.docx
+    │   ├── netl_logo_1153x599.png            <- header in before_body.html
+    │   ├── styles.css
     │   └── template.docx
     │
     ├── up_template/       <- Source code for this package.

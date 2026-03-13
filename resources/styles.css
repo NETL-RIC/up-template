@@ -1,0 +1,28 @@
+.table-wrapper {
+  overflow-x: scroll;
+  max-height:900px;
+}
+
+.table-wrapper > table > thead > tr {
+  position: sticky;
+  top: 0;
+  background-color: white;
+}
+
+
+.horizontal-scroll-except-first-column {
+  overflow-x: auto;
+  max-height:900px;
+}
+
+.horizontal-scroll-except-first-column > table > * > tr > th:first-child,
+.horizontal-scroll-except-first-column > table > * > tr > td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: white;
+}
+
+dt {
+  font-weight: bold;
+}

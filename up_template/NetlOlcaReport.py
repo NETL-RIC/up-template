@@ -12,8 +12,20 @@ readable formats, and exporting reports in Markdown, PDF, and Word formats.
 This module is a key part of the NETL Life Cycle Analysis (LCA) toolkit,
 designed for streamlined analysis and report generation.
 
+Examples:
+
+>>> from up_template import NetlOlcaReport
+>>> from netlolca import NetlOlca
+>>> n = NetlOlca()                          # initialize data manager
+>>> n.connect()                             # establish with IPC Server
+>>> n.read()                                # read openLCA database
+>>> r = NetlOlcaReport(n)                   # creates 'output' folder
+>>> ps_id = r.product_systems[0]            # find 1st product system UUID
+>>> r.fetch_data(ps_id)                     # automated data scraping
+>>> r.convert_to_html()                     # create .md; render to .html
+
 Last Edited:
-    2024-11-01
+    2026-03-13
 """
 __all__ = [
     "NetlOlcaReport",
@@ -52,7 +64,7 @@ OUTPUT_DIR = "output"
 ##############################################################################
 # CLASSES
 ##############################################################################
-class NetlOlcaReport:
+class NetlOlcaReport(object):
     """A report generating class for the Jupyter Notebook unit process
     template.
 
@@ -175,6 +187,16 @@ class NetlOlcaReport:
         )
 
     # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    # Class Properties
+    # ////////////////////////////////////////////////////////////////////////
+    @property
+    def product_systems(self):
+        """List of product system UUIDs"""
+        return self.netlolca.get_spec_ids(
+            self.netlolca.get_spec_class("Product system")
+        )
+
+    # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
     # Class Function Definitions
     # ////////////////////////////////////////////////////////////////////////
     def check_output_dir(self):
@@ -223,6 +245,11 @@ class NetlOlcaReport:
                 '--section-divs',
                 '--css',
                 'https://cdnjs.cloudflare.com/ajax/libs/concrete.css/3.0.0/concrete.min.css',
+                '--css',
+                'resources/styles.css',
+                '--metadata',
+                f'pagetitle={self.reference_name}',
+                '--title-prefix=NETL UP Library',
                 '--mathjax',
                 '--include-before-body',
                 'resources/before_body.html',
@@ -314,6 +341,9 @@ class NetlOlcaReport:
 
         Notes
         -----
+        This is a semi-automated report for the natural gas combustion unit
+        process.
+
         Class attributes are updated with fetched data, see :func:`fetch_data`.
 
         Returns
@@ -340,10 +370,22 @@ class NetlOlcaReport:
         if len(self.sources) > 0:
             sources_md = "\n\n".join(self.sources)
 
+        # Issue #8. Scenario attribute table (from workbook in DATA_DIR).
+        try:
+            scenario_table_md = scenario_attribute_table(
+                workbook_filename="DS_Stage5_O_Natural_Gas_Combustion_2014.01.xlsx",
+                sheet_name="PS",
+                header_row_excel=6,
+                start_col_excel="D",
+            )
+        except Exception as e:
+            logging.warning(f"Scenario attribute table could not be created: {e}")
+            scenario_table_md = "No scenario attributes available."
+
         # Add the calculations content from the filled workbook
         calculations_md = self.calculations_content or "No calculations available."
 
-        # Create markdown report
+        # Issue #8. Create markdown report (this has hard-coded values).
         report_md = f"""# Overview
 
 ## Process Name
@@ -353,81 +395,141 @@ class NetlOlcaReport:
 {ref_flow}
 
 ## Brief Description
-{process_desc}
-
-# Metadata
 {process_doc_md}
-
-## Relevant Flows Included:
-
-Releases to Air
-:   - [ ] Greenhouse Gases
-    - [ ] Criteria Air Pollutants
-    - [ ] Other
-
-Releases to Water
-:   - [ ] Inorganic Emissions
-    - [ ] Organic Emissions
-    - [ ] Other
-
-Releases to Soil
-:   - [ ] Inorganic Emissions
-    - [ ] Organic Emissions
-    - [ ] Other
-
-Water Usage
-:   - [ ] Water Demand
-    - [ ] Water Consumption
 
 
 # Process Description
 
 ## Goal & Scope
-{project_doc_md}
+{process_desc}
 
-## Boundary & Description
+## Process Boundary
 {boundary_desc}
 
-## Methods
-
-### Block Flow Diagram
-Link to your block flow diagram.
-For example:
-
-```sh
 ![](data/diagram.png)
-```
 
 ### Input Flows
+
+The table below provides a list of resource flows for this process.
+
+<div class="table-wrapper" markdown="block">
+
 {input_flows_md}
 
-## Output Flows
+</div>
+
+### Output Flows
+
+The table below provides a list of emission flows for this process.
+
+<div class="table-wrapper" markdown="block">
+
 {output_flows_md}
 
-### Process Parameters
+</div>
+
+## Preferred Providers
+
+_For each input product flow, add a statement as to its potential provider process(es)._
+
+## Suggested Downstream Uses
+
+_Based on the quantitative reference flow, add a statement as to what processes may use this flow as a resource (if any)._
+
+
+# Methods
+
+## Scenarios
+
+The following table describes the scenarios used in this process.
+
+{scenario_table_md}
+
+## Process Parameters
+
+The following table provides parameter quantities for each of the scenarios defined [above](#scenarios).
+These parameters represent the emissions found in the [output flow table](#output-flows).
+
 {param_table_md}
 
-### Allocation
+## Allocation
 {allocation_md}
 
-### Calculations
-{calculations_md}
+## Calculations and Supplements
+
+This report utilized the following supplemental files:
+
+- .xlsx
+    * _Include any workbooks used._
+- .py
+    * _Include any Python scripts (or Jupyter notebooks) used._
+- .zolca
+    * _Include the openLCA .zolca (or JSON-LD)._
+
+
+## Modeling Assumptions
+
+- _List the modeling assumptions, which may be found in "Modeling constants" section for process documentation in openLCA._
+
+# Data
+
+## Data Quality
+
+The following Data Quality Indicator (DQI) scores are assigned to this process
+using the DQI Matrix.
+
+<div class="table-wrapper" markdown="block">
+
+| DQI Indicator | Score | Basis for Score |
+|--------------|:-----:|----------------|
+| Source Reliability | **x** | _description_ |
+| Completeness | **x** | _description_ |
+| Temporal Correlation | **x** | _description_ |
+| Geographical Correlation | **x** | _description_ |
+| Technological Correlation | **x** | _description_ |
+
+</div>
+
+## Data Source Information
+
+_Copy the values from the named fields below from openLCA's process documentation into the table._
+
+| Element | Description |
+|--------|-------------|
+| Data Completeness |  |
+| Data Selection |  |
+| Data Treatment |  |
+| Sampling Procedure |  |
+| Data Collection Period |  |
 
 ## References
 {sources_md}
 
+
+# Use Information
+
+Use Advice
+:   _Copy text from "Intended Application" field in openLCA._
+
+Access and Restrictions
+:   _Copy text from "Access and use restrictions" field in openLCA._
+
+
 # Document Control Information
-Date Created
+Report Created:
 :   {create_date}
 
-Point of Contact
+Point of Contact:
 :   {project_poc_md}
 
-Revision History
+Revision History:
 :   {version_number}
 
-How to Cite This Document
-:   TBA
+How to Cite This Document:
+:   _Copied from EDX submission._
+
+Archived
+:   False
 
 # Disclaimer/Terms of Use
 {self.disclaimer}
@@ -445,75 +547,158 @@ How to Cite This Document
         """
         empty_rp = f"""# Overview
 
+_The following template has instructions included under each section in italics._
+
 ## Process Name
+
+_Process naming format should be based on the following: "Base name; treatment received, production route(s), standard(s) fulfilled; production or consumption type, location type; quantitative flow properties"_
 
 ## Reference Flow
 
+_Copy and paste the quantitative reference flow for the process including the flow amount, units, and name._
+
 ## Brief Description
 
-# Metadata
+_High-level process summary that communicates the basic technology and what is included in the boundary; see example below._
 
-## Relevant Flows Included:
+- Process Type: _State whether this is a Unit Process or System Process_
+- Inventory Method: _State whether this is Attributional or Consequential_
+- Technology Type: _High level technology categorization, such as natural gas, or bio fuels_
+- Unit Process Boundary: _State whether the process is Cradle-to-Grave, Cradle-to-Gate, Gate-to-Gate, etc._
+- Co-products: _List names, if applicable; otherwise, N/A_
+- Co-product allocation: _If applicable; otherwise, N/A. Examples include system expansion and mass allocation; list what is used and if there are any restrictions._
+- Scenarios: _Yes or no (e.g., link to [Scenarios](#scenarios) section)_
+- Location: _Geographic region associated with the unit process_
+- Valid From: _Year or date format_
+- Valid Until: _Year or date format_
+- Unit Process Creation Date: _May be different from report date_
+- Data Quantity Score: _The process DQI score (e.g., link to [Data Quality](#data-quality) for explanation of scoring)_
+- Data Completeness: _Link to [Data Source Information](#data-source-information) for more information_
 
-Releases to Air
-:   - [ ] Greenhouse Gases
-    - [ ] Criteria Air Pollutants
-    - [ ] Other
-
-Releases to Water
-:   - [ ] Inorganic Emissions
-    - [ ] Organic Emissions
-    - [ ] Other
-
-Releases to Soil
-:   - [ ] Inorganic Emissions
-    - [ ] Organic Emissions
-    - [ ] Other
-
-Water Usage
-:   - [ ] Water Demand
-    - [ ] Water Consumption
-
+_Conclude with the stated intended use._
 
 # Process Description
 
 ## Goal & Scope
-<!-- Documentation - Administrative information - Project -->
 
-## Boundary & Description
-<!-- Documentation - Data source information - Data selection -->
+_Define the purpose, and boundaries of the unit process, specifying what is included or excluded in the inventory._
 
-## Methods
+## Process Boundary
 
-### Block Flow Diagram
+_Describes the specific cutoff points that determine which inputs, outputs, and life cycle stages are included or excluded in the inventory._
 
-### Input Flows
+_Also, include a graphic of the box diagram for your process._
 
-### Output Flows
+## Input Flows
 
-### Process Parameters
-<!-- Add specific adjustable process parameters here if any -->
+_Provide an introduction (e.g., "The table below provides a list of resource flows for this process.") and provide a table of resources with columns: 'Compartment', 'Flow Name', 'Quantity', 'Unit', and 'DQI' (automated in Python)._
 
-### Allocation
+## Output Flows
 
-### Calculations
+_Provide an introduction (e.g., "The table below provides a list of emission flows for this process.") and provide a table of resources with columns: 'Compartment', 'Flow Name', 'Quantity', 'Unit', and 'DQI' (automated in Python)._
+
+## Preferred Providers
+
+_Include a process or description of upstream providers for each of the product flows identified in the input table._
+
+## Suggested Downstream Uses
+
+_Include a process or description of process, models, or domains where the use of this unit process may be applicable._
+
+# Methods
+
+## Scenarios
+
+_For natural gas unit processes, there are often scenarios that may be described in more detail here._
+
+## Allocation
+
+_State whether any allocation methods were used across co-products or by-production identified in the outputs table._
+
+
+## Calculations and Supplements
+
+_Include links and descriptions to additional resources that were utilized in creating this report and how they were utilized._
+_This includes, but is not limited to Excel workbooks, Python scripts, Jupyter notebooks, and other data files._
+
+## Modeling Assumptions
+
+_List any assumptions and known limitations to the utility or applicability of this unit process._
+
+# Data
+
+## Data Quality
+
+_Provide an overview of the data quality index utilized for this process, and include a table of its scores (see below for example empty table)._
+
+<div class="table-wrapper" markdown="block">
+
+| DQI Indicator | Score | Basis for Score |
+|--------------|:-----:|----------------|
+|  |  |  |
+|  |  |  |
+|  |  |  |
+|  |  |  |
+|  |  |  |
+
+</div>
+
+## Data Source Information
+
+_Additional data source metadata is included here (e.g., Data Completeness, Data Selection, Data Treatment, Sampling Procedure, and Data Collection Period), which should all be automated from openLCA (see below for empty table example)._
+
+<div class="table-wrapper" markdown="block">
+
+| Element | Description |
+|--------|-------------|
+| Data Completeness |  |
+| Data Selection |  |
+| Data Treatment |  |
+| Sampling Procedure |  |
+| Data Collection Period |  |
+
+</div>
+
 
 ## References
 
+_List the references cited in this report following a standard style (e.g., APA or IEEE)._
+
+# Use Information
+
+Use Advice
+:   _Describe the intended application and any additional uses._
+
+Access and Restrictions
+:   Neither the U.S. Department of Energy (DOE) National Energy Technology Laboratory (NETL) nor any person acting on behalf of these organizations:
+
+    A.  Makes any warranty or representation, express or implied, with respect to the accuracy, completeness, or usefulness of the information contained in this document, or that the use of any information, apparatus, method, or process disclosed in this document may not infringe on privately owned rights; or
+
+    B.  Assumes any liability with this report as to its use, or damages resulting from the use of any information, apparatus, method, or process disclosed in this document.
+
+    Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise, does not necessarily constitute or imply its endorsement, recommendation, or favoring by NETL.  The views and opinions of the authors expressed herein do not necessarily state or reflect those of NETL.
+
 # Document Control Information
+
 Date Created
-:   TBA
+:   _The date when the report was finalized._
 
 Point of Contact
-:   TBA
+:   _Name and email address._
 
 Revision History
-:   TBA
+:   _Version number. If other than 1.0, consider including a list of changes._
 
 How to Cite This Document
-:   TBA
+:   _Recommended citation (full text)._
+
+Archived
+:   _True/False (Yes/No) to indicate the active (false) or superseded (true) status._
 
 # Disclaimer/Terms of Use
+
+_Standard federal disclaimer (see default language below)._
+
 {self.disclaimer}
         """
 
@@ -558,8 +743,13 @@ How to Cite This Document
                 self.project_doc = self.format_project_doc(raw_process_doc)
                 self.poc = self.format_poc(raw_process_doc)
 
-            param_list = self.netlolca.find_process_parameters(uuid)
-            self.param_table = self.format_parameter_table(param_list)
+            # NEW: EY25 test case uses the supplemental MD table [260219;TWD]
+            # param_list = self.netlolca.find_process_parameters(uuid)
+            # self.param_table = self.format_parameter_table(param_list)
+            self.param_table = '<div class="horizontal-scroll-except-first-column" markdown="block">'
+            self.param_table += '\n\n'
+            self.param_table += read_markdown_table("up_test_parameters.txt")
+            self.param_table += "\n\n</div>"
 
             sources = self.netlolca.get_sources(uuid, False)
             self.sources = [self.format_source(x) for x in sources]
@@ -685,8 +875,11 @@ How to Cite This Document
                 comp = flows['category'][i]
                 dq = flows['dq'][i]
                 name = flows['name'][i]
-                # HOTFIX: rounds to 3 significant figures in scientific not.
-                quantity = "%0.3E" % flows['amount'][i]
+                # HOTFIX: for scenarios, use formula if available [260219; TWD]
+                quantity = flows['amountFormula'][i]
+                if quantity is None:
+                    # HOTFIX: round to 3 sig figs in scientific notation
+                    quantity = "%0.3E" % flows['amount'][i]
                 unit = flows['unit'][i]
                 flows_markdown += (
                     f"| {comp} | {name} | {quantity} | {unit} | {dq} |\n"
@@ -762,6 +955,9 @@ How to Cite This Document
                 "The following table provides process and global parameter "
                 "values and their associated uncertainty.\n\n"
             )
+            #Open scrollable table
+            md_table += '<div class="table-wrapper" markdown="block">\n\n'
+
             md_table += (
                 "| Scope | Name | Value | Uncertainty | Description |\n")
             md_table += (
@@ -811,6 +1007,10 @@ How to Cite This Document
                 p_string = " | ".join(p_items)
                 md_table += "| " + p_string + " |\n"
                 md_formula += p_form + "\n\n"
+
+        # Close scrollable table
+        if num_params > 0:
+            md_table += "\n</div>\n"
 
         # Add the formulas before the parameter table.
         md_table = md_formula + md_table
@@ -998,18 +1198,18 @@ How to Cite This Document
         if self.reference_name:
             # No spaces in file names
             p1 = re.compile("\\s+")
-            r_name = re.sub(p1, "_", self.reference_name)
+            r_name = re.sub(p1, "-", self.reference_name)
 
             # No special characters in file names
             p2 = re.compile("[/@.,&'\\\\\\(|\\)<>#;]+")
-            r_name = re.sub(p2, "_", r_name)
+            r_name = re.sub(p2, "-", r_name)
 
-            # Reduce extra underscores
-            p3 = re.compile("_+")
-            r_name = re.sub(p3, "_", r_name)
+            # Reduce extra dashes
+            p3 = re.compile("-+")
+            r_name = re.sub(p3, "-", r_name)
 
-            # Drop trailing underscore
-            if r_name[-1] == "_":
+            # Drop trailing dash
+            if r_name[-1] == "-":
                 r_name = r_name[0:-1]
 
             r_name += ext
@@ -1136,8 +1336,14 @@ How to Cite This Document
         else:
             self.md = md_txt
 
-    def save_markdown(self):
+    def save_markdown(self, blank=False):
         """Generate markdown report and save to file.
+
+        Parameters
+        ----------
+        blank : bool (optional)
+            Whether to save a blank template.
+            Defaults to false.
 
         Notes
         -----
@@ -1145,8 +1351,18 @@ How to Cite This Document
             file name that defaults to the reference process name.
         2.  This method re-creates the markdown report based on fetched data;
             any changes to the original markdown will be overwritten!
+
+        Examples
+        --------
+        >>> r = NetlOlcaReport(NetlOlca()) # initialize empty class
+        >>> r.save_markdown(blank=True)    # create empty template
         """
-        self.md = self.create_report_markdown()
+        if blank:
+            if self.reference_name is None:
+                self.reference_name = "blank-report"
+            self.md = self.empty_template()
+        else:
+            self.md = self.create_report_markdown()
         file_path = self.get_file_path('md')
         with open(file_path, 'w', encoding='utf-8', newline='\n') as f:
             f.write(self.md)
@@ -1290,9 +1506,9 @@ def _fix_formula(p_name, f_txt, in_line=False):
 
         # Put between latex equation markers
         if in_line:
-            new_txt = "$%s%" % new_txt
+            new_txt = f"${new_txt}$"
         else:
-            new_txt = "$$\n%s\n$$" % new_txt
+            new_txt = f"$$\n{new_txt}\n$$"
 
     return new_txt
 
@@ -1349,3 +1565,212 @@ def _fix_uncertainty(param):
         r_str = "%s (%s)" % (u_type, u_params)
 
     return r_str
+
+
+def read_markdown_table(md_file):
+    """Helper function to read a markdown table from a file.
+
+    Parameters
+    ----------
+    md_file : str
+        Markdown file name.
+        Note: file must be located in the ``DATA_DIR`` directory.
+
+    Returns
+    -------
+    str
+        Markdown table as a Python string.
+
+    Raises
+    ------
+    OSError
+        If the file does not exist in the ``DATA_DIR``.
+    """
+    file_path = os.path.join(DATA_DIR, md_file)
+    if not os.path.isfile(file_path):
+        raise OSError("Failed to find %s in %s!" % (md_file, DATA_DIR))
+    with open(file_path, 'r') as f:
+        my_data = f.readlines()  # newline character is in the string
+    my_str = "".join(my_data)
+    return my_str
+
+
+def scenario_attribute_table(
+    workbook_filename: str,
+    sheet_name: str = "PS",
+    *,
+    header_row_excel: int = 6,
+    start_col_excel: str = "D",
+    max_height_px: int = 600,
+    return_dataframe: bool = False,
+):
+    """Build scenario attribute table from scenario header strings in an Excel sheet.
+
+    Workbook must be located in DATA_DIR. Scenario names are assumed to be in the
+    header row (Excel row header_row_excel) starting at start_col_excel.
+    """
+    workbook_path = os.path.join(DATA_DIR, workbook_filename)
+    if not os.path.isfile(workbook_path):
+        raise OSError(f"Workbook not found in DATA_DIR: {workbook_path}")
+
+    # Convert Excel col letter(s) to 0-indexed integer
+    col_letter = str(start_col_excel).strip().upper()
+    if not col_letter or any(not ("A" <= c <= "Z") for c in col_letter):
+        raise ValueError(f"Invalid Excel column letter: {start_col_excel}")
+
+    start_col_index = 0
+    for c in col_letter:
+        start_col_index = start_col_index * 26 + (ord(c) - ord("A") + 1)
+    start_col_index -= 1
+
+    header_row_index = header_row_excel - 1
+    scenario_source_df = pd.read_excel(
+        workbook_path,
+        sheet_name=sheet_name,
+        header=header_row_index,
+        engine="openpyxl",
+    )
+
+    scenario_header_candidates = list(scenario_source_df.columns[start_col_index:])
+    scenario_names = []
+    for header_val in scenario_header_candidates:
+        if pd.isna(header_val):
+            continue
+        header_text = re.sub(r"\s+", " ", str(header_val)).strip().strip(",")
+        if header_text.startswith("External Combustion Boilers") or header_text.startswith("Internal Combustion Engines"):
+            scenario_names.append(header_text)
+
+    scenario_records = []
+    for scenario_id, scenario_name in enumerate(scenario_names, start=1):
+        name = re.sub(r"\s+", " ", str(scenario_name)).strip().strip(",")
+        parts = [p.strip() for p in name.split(",") if p.strip()]
+
+        tech = parts[0] if len(parts) > 0 else "NA"
+        sector = parts[1] if len(parts) > 1 else "NA"
+        fuel = parts[2] if len(parts) > 2 else "NA"
+        remainder = parts[3:] if len(parts) > 3 else []
+
+        regulatory_vintage = "NA"
+        size_class_mmbtu_hr = "NA"
+        firing_type = "NA"
+        operating_mode = "Standard"
+
+        if "External Combustion Boilers" in tech:
+            technology_family = "External Combustion Boiler"
+            equipment_category = "Boiler"
+
+            if "Pre-NSPS" in name:
+                regulatory_vintage = "Pre-NSPS"
+            elif "Post" in name and "NSPS" in name:
+                regulatory_vintage = "Post-NSPS"
+
+            if any(r.lower() == "cogeneration" for r in remainder):
+                operating_mode = "Cogeneration"
+                equipment_subtype = "Cogeneration"
+                control_technology = remainder[-1] if remainder else "NA"
+
+                scenario_records.append({
+                    "Scenario_ID": scenario_id,
+                    "Scenario_Name": name,
+                    "Technology_Family": technology_family,
+                    "Sector": sector,
+                    "Fuel": fuel,
+                    "Equipment_Category": equipment_category,
+                    "Equipment_Subtype": equipment_subtype,
+                    "Size_Class_MMBtu_hr": "NA",
+                    "Firing_Type": "NA",
+                    "Control_Technology": control_technology,
+                    "Regulatory_Vintage": regulatory_vintage,
+                    "Operating_Mode": operating_mode,
+                })
+                continue
+
+            if any("Tangentially Fired Units" in r for r in remainder):
+                equipment_subtype = "Tangential"
+                firing_type = "Tangential"
+            else:
+                equipment_subtype = "Non-tangential"
+                firing_type = "Non-tangential"
+                joined = " ".join(remainder)
+                if re.search(r">\s*100", joined):
+                    size_class_mmbtu_hr = ">100"
+                elif re.search(r"<\s*100", joined):
+                    size_class_mmbtu_hr = "<100"
+                elif re.search(r"10\s*-\s*100", joined):
+                    size_class_mmbtu_hr = "10-100"
+                elif re.search(r"<\s*10", joined):
+                    size_class_mmbtu_hr = "<10"
+
+            control_technology = remainder[-1] if remainder else "NA"
+
+        else:
+            technology_family = "Internal Combustion Engine"
+            equipment_category = "Engine"
+            equipment_subtype = remainder[0] if remainder else "NA"
+            control_technology = remainder[-1] if remainder else "NA"
+            operating_mode = "Cogeneration" if ":Cogeneration" in equipment_subtype else "Standard"
+            regulatory_vintage = "NA"
+            size_class_mmbtu_hr = "NA"
+            firing_type = "NA"
+
+        scenario_records.append({
+            "Scenario_ID": scenario_id,
+            "Scenario_Name": name,
+            "Technology_Family": technology_family,
+            "Sector": sector,
+            "Fuel": fuel,
+            "Equipment_Category": equipment_category,
+            "Equipment_Subtype": equipment_subtype,
+            "Size_Class_MMBtu_hr": size_class_mmbtu_hr,
+            "Firing_Type": firing_type,
+            "Control_Technology": control_technology,
+            "Regulatory_Vintage": regulatory_vintage,
+            "Operating_Mode": operating_mode,
+        })
+
+    scenario_columns = [
+        "Scenario_ID",
+        "Scenario_Name",
+        "Technology_Family",
+        "Sector",
+        "Fuel",
+        "Equipment_Category",
+        "Equipment_Subtype",
+        "Size_Class_MMBtu_hr",
+        "Firing_Type",
+        "Control_Technology",
+        "Regulatory_Vintage",
+        "Operating_Mode",
+    ]
+    scenario_table_df = pd.DataFrame(scenario_records)
+    for c in scenario_columns:
+        if c not in scenario_table_df.columns:
+            scenario_table_df[c] = "NA"
+    scenario_table_df = scenario_table_df[scenario_columns].fillna("NA")
+
+    scenario_table_md = (
+        f'<div style="width:100%; overflow:auto; max-height:{max_height_px}px;">\n\n'
+        f'{scenario_table_df.to_markdown(index=False)}\n\n'
+        f'</div>\n'
+    )
+
+    if return_dataframe:
+        return scenario_table_df, scenario_table_md
+    return scenario_table_md
+
+
+#
+# SANDBOX
+#
+if __name__ == '__main__':
+    from up_template import NetlOlcaReport
+    from netlolca import NetlOlca
+    n = NetlOlca()                          # initialize data manager
+    n.connect()                             # establish with IPC Server
+    n.read()                                # read openLCA database
+    r = NetlOlcaReport(n)                   # creates 'output' folder
+    ps_id = r.netlolca.get_spec_ids(        # find 1st product system UUID
+        r.netlolca.get_spec_class("Product system")
+    )[0]
+    r.fetch_data(ps_id)                     # automated data scraping
+    r.convert_to_html()                     # create .md; render to .html

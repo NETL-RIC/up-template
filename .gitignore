@@ -4,6 +4,7 @@
 .vscode
 .DS_Store
 .ipynb_checkpoints
+.virtual_documents
 *.html
 __pycache__
 
@@ -14,6 +15,10 @@ up_template.egg-info/*
 # Ignore third-party Dockerfiles
 dockers/*/Dockerfile
 .env
+
+# Ignore data and outputs on repo
+data
+output
 
 # Keep the HTML resources with the repo
 !resources/*.html

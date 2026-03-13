@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "up_template"
+version = "4.5.0"
+description = "The NETL Unit Process Template and Report Generator"
+readme = "README.md"
+authors = [
+  { name = "Tyler W. Davis" },
+  { name = "Priyadarshini" },
+  { name = "Joseph Chou" },
+  { name = "Matt Jamieson", email = "matthew.jamieson@netl.doe.gov" }
+]
+license = "CC0-1.0"
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "netlolca @ git+https://github.com/NETL-RIC/netlolca",
+    "openpyxl",
+    "pandas",
+    "sympy",
+    "tabulate",
+    "jupyterlab",
+]
+
+[project.urls]
+Homepage = "https://github.com/NETL-RIC/up_template"
+
+[tool.setuptools]
+packages = ["up_template"]
